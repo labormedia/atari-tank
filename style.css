@@ -1,0 +1,486 @@
+:root {
+  --bg-color: #1a1a1a;
+  --bezel-color: #2b2b2b;
+  --atari-sand: #e2b007;
+  --atari-tank-tan: #caa049;
+  --atari-tank-blue: #3d7cd1;
+  --crt-scanline: rgba(18, 16, 16, 0.25);
+  --neon-green: #39ff14;
+  --font-retro: 'Press Start 2P', monospace;
+  --font-vt: 'VT323', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: #fff;
+  font-family: var(--font-retro);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding: 10px;
+}
+
+.arcade-cabinet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #111;
+  border: 8px solid #3a3a3a;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,0,0,0.8);
+  padding: 16px;
+  max-width: 860px;
+  width: 100%;
+}
+
+/* Scoreboard */
+.scoreboard {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #000;
+  padding: 12px 24px;
+  border: 4px solid #444;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.score-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-card.player-p1 .label,
+.score-card.player-p1 .score {
+  color: var(--atari-tank-tan);
+}
+
+.score-card.player-p2 .label,
+.score-card.player-p2 .score {
+  color: var(--atari-tank-blue);
+}
+
+.score-card .label {
+  font-size: 11px;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+
+.score-card .score {
+  font-size: 32px;
+  font-family: var(--font-vt);
+  letter-spacing: 2px;
+}
+
+.game-timer-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timer-title {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.time-display {
+  font-family: var(--font-vt);
+  font-size: 36px;
+  color: #ff3333;
+}
+
+/* Canvas & CRT Emulation */
+.canvas-wrapper {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  max-width: 100%;
+  background: #d4a34b; /* Atari 2600 warm sand pitch */
+  border: 6px solid #222;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.3) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.crt-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* Overlays */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  color: #fff;
+  text-align: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.banner-title h1 {
+  font-size: 42px;
+  color: #ff3333;
+  text-shadow: 3px 3px #000, 0 0 10px rgba(255, 51, 51, 0.5);
+  margin-bottom: 8px;
+}
+
+.banner-title h2 {
+  font-size: 16px;
+  color: #ffd700;
+  letter-spacing: 2px;
+  margin-bottom: 30px;
+}
+
+.blink-text {
+  font-size: 14px;
+  color: #39ff14;
+  animation: retro-blink 1.1s infinite;
+  margin-top: 15px;
+  margin-bottom: 25px;
+}
+
+@keyframes retro-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.quick-controls-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 10px;
+  color: #aaa;
+  background: #111;
+  padding: 14px 20px;
+  border: 2px solid #444;
+  border-radius: 4px;
+}
+
+/* Footer / Controls */
+.arcade-bottom {
+  width: 100%;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #000;
+  border: 4px solid #333;
+  padding: 10px 16px;
+  border-radius: 6px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: #ccc;
+  gap: 8px;
+}
+
+.indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #888;
+  display: inline-block;
+  box-shadow: 0 0 6px #888;
+}
+
+.indicator-dot.active {
+  background: #39ff14;
+  box-shadow: 0 0 8px #39ff14;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.retro-btn {
+  font-family: var(--font-retro);
+  font-size: 10px;
+  padding: 8px 12px;
+  background: #2b2b2b;
+  color: #fff;
+  border: 2px solid #666;
+  border-bottom: 4px solid #444;
+  border-right: 4px solid #444;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.05s;
+}
+
+.retro-btn:hover {
+  background: #444;
+}
+
+.retro-btn:active {
+  transform: translateY(2px);
+  border-bottom: 2px solid #444;
+  border-right: 2px solid #444;
+}
+
+.retro-btn.primary {
+  background: #1e5a2b;
+  border-color: #39ff14;
+}
+
+.retro-btn.small {
+  padding: 4px 8px;
+  font-size: 9px;
+}
+
+.retro-btn.tiny {
+  padding: 2px 6px;
+  font-size: 8px;
+  margin-left: 8px;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #181818;
+  border: 6px solid #555;
+  border-radius: 8px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.9);
+  width: 90%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 3px solid #333;
+}
+
+.modal-header h2 {
+  font-size: 14px;
+  color: #ffd700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #ff3333;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.config-section {
+  background: #111;
+  border: 2px solid #333;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.config-section h3 {
+  font-size: 11px;
+  color: #39ff14;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #444;
+  padding-bottom: 4px;
+}
+
+.section-help {
+  font-size: 9px;
+  color: #888;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 10px;
+  gap: 10px;
+}
+
+.retro-select {
+  font-family: var(--font-retro);
+  font-size: 9px;
+  background: #222;
+  color: #fff;
+  border: 2px solid #555;
+  padding: 6px;
+  outline: none;
+  max-width: 60%;
+}
+
+.diagnostics-panel {
+  background: #000;
+  border: 1px solid #444;
+  padding: 8px;
+  font-family: var(--font-vt);
+  font-size: 16px;
+  color: #0f0;
+  margin-bottom: 10px;
+}
+
+.diag-header {
+  color: #ffd700;
+  margin-bottom: 6px;
+}
+
+.diag-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mapping-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+
+.mapping-table td {
+  padding: 6px;
+  border-bottom: 1px solid #222;
+}
+
+.keys-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  font-size: 9px;
+}
+
+.key-card {
+  background: #0a0a0a;
+  padding: 8px;
+  border: 1px solid #333;
+}
+
+.key-card strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #ffd700;
+}
+
+.key-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+kbd {
+  background: #333;
+  color: #fff;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 9px;
+  border-bottom: 2px solid #111;
+}
+
+.modal-footer {
+  padding: 12px 16px;
+  border-top: 3px solid #333;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Additional tags for controller mappings */
+.tag-btn {
+  background: #2b4b7c;
+  color: #ffd700;
+  padding: 3px 6px;
+  border-radius: 3px;
+  border: 1px solid #4d7cc1;
+  font-family: var(--font-vt);
+  font-size: 15px;
+  letter-spacing: 1px;
+  display: inline-block;
+}

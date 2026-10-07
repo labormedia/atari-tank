@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atari Combat 2600 - Tank Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="arcade-cabinet">
+    <!-- Header / Scoreboard -->
+    <header class="scoreboard">
+      <div class="score-card player-p1">
+        <span class="label">PLAYER 1</span>
+        <span id="score-p1" class="score">0</span>
+      </div>
+      <div class="game-timer-box">
+        <span class="timer-title" id="timer-status-badge">TIME</span>
+        <span id="game-timer" class="time-display">2:00</span>
+      </div>
+      <div class="score-card player-p2">
+        <span class="label" id="p2-header-label">CPU (MEDIUM)</span>
+        <span id="score-p2" class="score">0</span>
+      </div>
+    </header>
+
+    <!-- Main Game Canvas Container with Retro Bezel/Scanlines -->
+    <main class="canvas-wrapper">
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+      <div class="scanlines"></div>
+      <div class="crt-glow"></div>
+
+      <!-- Overlay Screens -->
+      <div id="start-overlay" class="overlay active">
+        <div class="banner-title">
+          <h1>COMBAT</h1>
+          <h2>TANK BATTLE 2600</h2>
+        </div>
+        <p class="blink-text">PRESS START [B9] OR FIRE / SPACE</p>
+        <div class="quick-controls-hint">
+          <span><strong>🎮 USB Controller (Sony PS Mini):</strong> [START / B9] Pause/Start &bull; [SELECT / B8] Setup Menu</span>
+          <span>[B0 / Cross] Main Cannon &bull; [B1 / Circle] Self-Guided Missile</span>
+          <span>[B2 / Square] 2-Cannon Diagonal Shooter (+45° & -45°)</span>
+          <span>[B3 / Triangle] 2-Sided Cannon Shooter (+90° & -90°)</span>
+          <span><strong>⌨ Keyboard:</strong> [P] Pause &bull; [Space] Cannon &bull; [1] Missile &bull; [2] Diagonal &bull; [3] 2-Sided</span>
+        </div>
+      </div>
+
+      <!-- Pause Overlay -->
+      <div id="pause-overlay" class="overlay hidden">
+        <div class="banner-title">
+          <h1 style="color: #ffd700;">GAME PAUSED</h1>
+        </div>
+        <p class="blink-text">PRESS START [B9] OR [P] TO RESUME</p>
+        <div class="quick-controls-hint">
+          <span>Controller: Press [START / B9] to resume battle</span>
+          <span>Press [SELECT / B8] to open Setup Menu</span>
+        </div>
+      </div>
+
+      <div id="game-over-overlay" class="overlay hidden">
+        <h1 id="winner-banner">PLAYER 1 WINS!</h1>
+        <p class="final-score" id="final-score-text">FINAL SCORE: 5 - 3</p>
+        <p class="blink-text">PRESS START [B9] OR SPACE TO PLAY AGAIN</p>
+      </div>
+    </main>
+
+    <!-- Control Bar / Status Bar -->
+    <footer class="arcade-bottom">
+      <div class="status-indicator">
+        <span class="indicator-dot" id="controller-dot"></span>
+        <span id="controller-status-text">Controller: None detected (Using Keyboard)</span>
+      </div>
+      <div class="action-buttons">
+        <button id="btn-pause-toggle" class="retro-btn">⏸ PAUSE (B9 / P)</button>
+        <button id="btn-settings" class="retro-btn">⚙ SETUP MENU (B8)</button>
+        <button id="btn-sound-toggle" class="retro-btn">🔊 SOUND: ON (M)</button>
+        <button id="btn-reset" class="retro-btn">↺ RESET (R)</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Setup / Configuration Modal -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>GAME & CONTROLLER SETUP</h2>
+        <button id="btn-close-modal" class="close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Opponent Mode and AI Difficulty -->
+        <section class="config-section">
+          <h3>GAME MODE & OPPONENT</h3>
+          <div class="form-row">
+            <label for="opponent-select">Opponent Type:</label>
+            <select id="opponent-select" class="retro-select">
+              <option value="ai" selected>Automated Computer (AI)</option>
+              <option value="human">Local 2-Player (Human P2)</option>
+            </select>
+          </div>
+
+          <div class="form-row" id="ai-difficulty-row">
+            <label for="ai-difficulty-select">AI Difficulty:</label>
+            <select id="ai-difficulty-select" class="retro-select">
+              <option value="easy">Recruit (Easy - Slow reaction, wandering)</option>
+              <option value="medium" selected>Veteran (Medium - Flanking, predictive aim)</option>
+              <option value="hard">Ace (Hard - Ricochet shots & special weapons)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="round-duration-select">Round Duration:</label>
+            <select id="round-duration-select" class="retro-select">
+              <option value="60">1 Minute</option>
+              <option value="120" selected>2 Minutes (Atari Classic)</option>
+              <option value="180">3 Minutes</option>
+              <option value="999999">No Time Limit (First to 10)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="arena-select">Battlefield Arena:</label>
+            <select id="arena-select" class="retro-select">
+              <option value="classic" selected>Classic Atari Maze</option>
+              <option value="open">Open Field (No Barriers)</option>
+              <option value="fortress">Fortress & Columns</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- USB Game Controller / Gamepad Diagnostics & Weapon Arsenal -->
+        <section class="config-section">
+          <h3>USB CONTROLLER WEAPON ARSENAL (SONY PS MINI 054c)</h3>
+          <p class="section-help">Action buttons B0, B1, B2, and B3 are directly mapped to tank weaponry during combat.</p>
+          
+          <div class="form-row">
+            <label for="gamepad-select">Active Gamepad:</label>
+            <select id="gamepad-select" class="retro-select">
+              <option value="-1">None / Search Gamepads...</option>
+            </select>
+            <button id="btn-detect-gamepad" class="retro-btn small">Refresh</button>
+          </div>
+
+          <div id="gamepad-diagnostics" class="diagnostics-panel">
+            <div class="diag-header" id="gamepad-name">No USB Controller connected</div>
+            <div class="diag-meters">
+              <div><strong>Axes (Sticks / D-Pad):</strong> <span id="diag-axes">0: 0.00, 1: 0.00</span></div>
+              <div><strong>Active Buttons:</strong> <span id="diag-buttons">None</span></div>
+            </div>
+          </div>
+
+          <div class="mapping-table-wrap">
+            <h4>Weapon & Control Mappings</h4>
+            <table class="mapping-table">
+              <tr>
+                <td><strong>Main Front Cannon</strong></td>
+                <td><span class="tag-btn">Button 0 (Cross / B0)</span> or <kbd>Space</kbd></td>
+              </tr>
+              <tr>
+                <td><strong>🚀 Self-Guided Missile</strong></td>
+                <td><span class="tag-btn">Button 1 (Circle / B1)</span> or <kbd>1</kbd></td>
+              </tr>
+              <tr>
+                <td><strong>↗ Two Diagonal Cannons (±45°)</strong></td>
+                <td><span class="tag-btn">Button 2 (Square / B2)</span> or <kbd>2</kbd></td>
+              </tr>
+              <tr>
+                <td><strong>↔ Two-Sided Cannons (±90°)</strong></td>
+                <td><span class="tag-btn">Button 3 (Triangle / B3)</span> or <kbd>3</kbd></td>
+              </tr>
+              <tr>
+                <td><strong>Pause / Resume / Start</strong></td>
+                <td><span class="tag-btn">Button 9 (START)</span> or <kbd>P</kbd></td>
+              </tr>
+              <tr>
+                <td><strong>Setup Menu</strong></td>
+                <td><span class="tag-btn">Button 8 (SELECT)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Steer & Drive (Tank)</strong></td>
+                <td>D-Pad or Left Stick / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td>
+              </tr>
+            </table>
+          </div>
+        </section>
+
+        <!-- Keyboard Controls Reference -->
+        <section class="config-section">
+          <h3>KEYBOARD CONTROLS</h3>
+          <div class="keys-grid">
+            <div class="key-card">
+              <strong>Player 1:</strong>
+              <ul>
+                <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Arrows</kbd>: Drive & Rotate</li>
+                <li><kbd>Space</kbd>: Main Cannon</li>
+                <li><kbd>1</kbd>: Self-Guided Missile (Homing)</li>
+                <li><kbd>2</kbd>: Two Diagonal Cannons (±45°)</li>
+                <li><kbd>3</kbd>: Two-Sided Cannons (±90°)</li>
+                <li><kbd>P</kbd> / <kbd>Esc</kbd>: Pause &bull; <kbd>M</kbd>: Sound &bull; <kbd>R</kbd>: Reset</li>
+              </ul>
+            </div>
+            <div class="key-card">
+              <strong>Player 2 (If Human):</strong>
+              <ul>
+                <li><kbd>I</kbd><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd>: Drive & Rotate</li>
+                <li><kbd>F</kbd>: Main Cannon</li>
+                <li><kbd>7</kbd>: Self-Guided Missile</li>
+                <li><kbd>8</kbd>: Two Diagonal Cannons</li>
+                <li><kbd>9</kbd>: Two-Sided Cannons</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-save-settings" class="retro-btn primary">APPLY & RETURN</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="gamepad.js"></script>
+  <script src="ai.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

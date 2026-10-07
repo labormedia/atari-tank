@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gamepad Diagnostic Tool</title>
+  <style>
+    body { background: #111; color: #0f0; font-family: monospace; padding: 20px; }
+    .box { border: 1px solid #444; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+    h2 { color: #ffd700; margin-top: 0; }
+    .btn-active { color: #fff; background: #c00; font-weight: bold; padding: 2px 5px; border-radius: 3px; }
+    .btn-inactive { color: #555; padding: 2px 5px; }
+    .grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>USB Gamepad Direct Diagnostic</h1>
+  <p>Plug in your Sony PlayStation mini USB controller (054c) and press any button.</p>
+  <div id="output">Detecting controllers...</div>
+
+  <script>
+    function render() {
+      const pads = (navigator.getGamepads ? navigator.getGamepads() : []) || [];
+      const out = document.getElementById('output');
+      let html = '';
+      let found = false;
+
+      for (let i = 0; i < pads.length; i++) {
+        const p = pads[i];
+        if (p && p.connected !== false) {
+          found = true;
+          html += `<div class="box">`;
+          html += `<h2>[Pad #${p.index}] ${p.id}</h2>`;
+          html += `<div><strong>Mapping:</strong> ${p.mapping || 'Standard/Raw'}</div>`;
+          
+          // Axes
+          html += `<div><strong>Axes:</strong> `;
+          p.axes.forEach((a, axIdx) => {
+            html += `Axis ${axIdx}: ${a.toFixed(3)} | `;
+          });
+          html += `</div>`;
+
+          // Buttons
+          html += `<div><strong>Buttons (${p.buttons.length}):</strong></div><div class="grid">`;
+          p.buttons.forEach((b, bIdx) => {
+            const isDown = b && b.pressed;
+            html += `<span class="${isDown ? 'btn-active' : 'btn-inactive'}">B${bIdx}${isDown ? ' (DOWN)' : ''}</span>`;
+          });
+          html += `</div></div>`;
+        }
+      }
+
+      if (!found) {
+        html = '<div style="color: #ff3333;">No active gamepad reported by browser yet. Press any D-pad direction or button on your controller to wake the Web Gamepad API.</div>';
+      }
+
+      out.innerHTML = html;
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
